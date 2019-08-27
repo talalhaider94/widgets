@@ -2,18 +2,19 @@ import { Component, OnInit, ComponentRef, ViewChild } from '@angular/core';
 import { GridsterConfig, GridType, DisplayGrid } from 'angular-gridster2';
 import { DashboardService, EmitterService } from '../../../_services';
 import { ActivatedRoute } from '@angular/router';
-import { DashboardModel, DashboardContentModel, WidgetModel } from '../../../_models';
+import { DashboardModel, DashboardContentModel, WidgetModel, ComponentCollection } from '../../../_models';
 import { Subscription, forkJoin } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { FormGroup, FormBuilder } from '@angular/forms';
 import { DateTimeService } from '../../../_helpers';
+import { TreeViewComponent } from '@syncfusion/ej2-angular-navigations';
 // importing chart components
 import { LineChartComponent } from '../../../widgets/line-chart/line-chart.component';
 import { DoughnutChartComponent } from '../../../widgets/doughnut-chart/doughnut-chart.component';
 import { RadarChartComponent } from '../../../widgets/radar-chart/radar-chart.component';
 import { BarchartComponent } from '../../../widgets/barchart/barchart.component';
-
+import { KpiCountSummaryComponent } from '../../../widgets/kpi-count-summary/kpi-count-summary.component';
 @Component({
 	selector: 'app-public',
 	templateUrl: './public.component.html',
@@ -28,17 +29,32 @@ export class PublicComponent implements OnInit {
 	emitterSubscription: Subscription; // need to destroy this subscription later
 	@ViewChild('widgetParametersModal') public widgetParametersModal: ModalDirective;
 	barChartWidgetParameters: any;
+
+	treesArray = [];
+	isTreeLoaded = false;
+	public treeFields: any = {
+		dataSource: [],
+		id: 'id',
+		text: 'name',
+		child: 'children',
+		title: 'name'
+	};
+
 	// FORM
 	widgetParametersForm: FormGroup;
 	submitted: boolean = false;
 	// move to Dashboard service
-	componentCollection = [
-		{ name: "Line Chart", componentInstance: LineChartComponent },
-		{ name: "Doughnut Chart", componentInstance: DoughnutChartComponent },
-		{ name: "Radar Chart", componentInstance: RadarChartComponent },
+	componentCollection: Array<ComponentCollection> = [
+		{ name: "Line Chart", componentInstance: LineChartComponent, uiidentifier: "not_implemented" },
+		{ name: "Distribution by Verifica", componentInstance: DoughnutChartComponent, uiidentifier: "distribution_by_verifica" },
+		{ name: "Radar Chart", componentInstance: RadarChartComponent, uiidentifier: "not_implemented" },
 		{ name: "Count Trend", componentInstance: BarchartComponent, uiidentifier: "count_trend" },
+		{ name: "KPI Count Summary", componentInstance: KpiCountSummaryComponent, uiidentifier: "kpi_count_summary" },
 	];
 	helpText: string = '';
+	showDateRangeInFilters: boolean = false;
+	showDateInFilters: boolean = false;
+
 	constructor(
 		private dashboardService: DashboardService,
 		private _route: ActivatedRoute,
@@ -50,16 +66,13 @@ export class PublicComponent implements OnInit {
 
 	outputs = {
 		barChartParent: childData => {
-			// if (childData.type === 'barChartParams') {
-			// 	this.barChartWidgetParameters = childData.data;
-			// }
+			console.log('barChartParent childData', childData);
 			if (childData.type === 'openBarChartModal') {
 				this.barChartWidgetParameters = childData.data.barChartWidgetParameters;
 				if (this.barChartWidgetParameters) {
-					console.log('CHILD DATA', childData.data.barChartWidgetParameters);
-					debugger
 					setTimeout(() => {
-						this.widgetParametersForm.setValue(childData.data.setWidgetFormValues)
+						this.widgetParametersForm.patchValue(childData.data.setWidgetFormValues)
+						// this.widgetParametersForm.get('daterange').disable();
 					});
 				}
 				this.helpText = this.widgetCollection.find(widget => widget.uiidentifier === 'count_trend').help;
@@ -83,8 +96,11 @@ export class PublicComponent implements OnInit {
 				measure: [null]
 			}),
 			Filters: this.formBuilder.group({
-				daterange: [null]
-			})
+				daterange: [null],
+				dateTypes: [null],
+				date: [null]
+			}),
+			Note: [null],
 		});
 		// Grid options
 		this.options = {
@@ -128,6 +144,26 @@ export class PublicComponent implements OnInit {
 			this.emitter.loadingStatus(true);
 			this.getData(this.dashboardId);
 		});
+
+		this.widgetParametersForm.get('Filters').get('dateTypes').valueChanges.subscribe((value) => {
+			console.log('Date Type Filter', value);
+			if(value === 'Custom') {
+				this.showDateRangeInFilters = true;
+				this.showDateInFilters = true;
+			} else{
+				this.showDateRangeInFilters = false;
+				this.showDateInFilters = false;
+			}
+		});
+
+		////Tree View////
+		console.log('--- Tree View ---');
+		this.dashboardService.GetOrganizationHierarcy().subscribe(data=>{
+		console.log('GetOrganizationHierarcy ==> ', data);
+		//this.treeFields.dataSource = data;
+		this.createTrees(data);
+		}, err => {this.isTreeLoaded = true; this.toastr.warning('Connection error', 'Info')});
+
 	}
 
 	getData(dashboardId: number) {
@@ -160,20 +196,6 @@ export class PublicComponent implements OnInit {
 		})
 
 	}
-	// might have to re-use it later when updating dashboard on save.
-	// getDashboardWidgetsData(dashboardId) {
-	// 	this.emitter.loadingStatus(true);
-	// 	this.dashboardService.getDashboard(dashboardId).subscribe(dashboard => {
-	// 		this.dashboardCollection = dashboard;
-	// 		this.parseJson(this.dashboardCollection);
-	// 		this.dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets.slice();
-	// 		this.emitter.loadingStatus(false);
-	// 	}, error => {
-	// 		console.log('getDashboardWidgetsData', error);
-	// 		this.toastr.error('Error while fetching dashboards');
-	// 		this.emitter.loadingStatus(false);
-	// 	});
-	// }
 
 	parseJson(dashboardCollection: DashboardModel) {
 		// We loop on our dashboardCollection
@@ -220,84 +242,6 @@ export class PublicComponent implements OnInit {
 		});
 	}
 
-	// onDrop(ev) {
-	// 	const componentType = ev.dataTransfer.getData("widgetIdentifier");
-	// 	switch (componentType) {
-	// 		case "radar_chart": {
-	// 			let radarWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'radar_chart');
-	// 			return this.dashboardWidgetsArray.push({
-	// 				cols: 5,
-	// 				rows: 5,
-	// 				x: 0,
-	// 				y: 0,
-	// 				component: RadarChartComponent,
-	// 				widgetname: radarWidget.name,
-	// 				uiidentifier: radarWidget.uiidentifier,
-	// 				filters: {}, // need to update this code
-	// 				properties: {},
-	// 				dashboardid: this.dashboardId,
-	// 				widgetid: radarWidget.id,
-	// 				id: 0, // 0 because we are adding them
-	// 				url: radarWidget.url
-	// 			});
-	// 		}
-	// 		case "line_chart": {
-	// 			let lineWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'line_chart');
-	// 			return this.dashboardWidgetsArray.push({
-	// 				cols: 5,
-	// 				rows: 5,
-	// 				x: 0,
-	// 				y: 0,
-	// 				component: LineChartComponent,
-	// 				widgetname: lineWidget.name,
-	// 				uiidentifier: lineWidget.uiidentifier,
-	// 				filters: {}, // need to update this code
-	// 				properties: {},
-	// 				dashboardid: this.dashboardId,
-	// 				widgetid: lineWidget.id,
-	// 				id: 0,
-	// 				url: lineWidget.url
-	// 			});
-	// 		}
-	// 		case "doughnut_chart": {
-	// 			let doughnutWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'doughnut_chart');
-	// 			return this.dashboardWidgetsArray.push({
-	// 				cols: 5,
-	// 				rows: 5,
-	// 				x: 0,
-	// 				y: 0,
-	// 				component: DoughnutChartComponent,
-	// 				widgetname: doughnutWidget.name,
-	// 				uiidentifier: doughnutWidget.uiidentifier,
-	// 				filters: {}, // need to update this code
-	// 				properties: {},
-	// 				dashboardid: this.dashboardId,
-	// 				widgetid: doughnutWidget.id,
-	// 				id: 0,
-	// 				url: doughnutWidget.url
-	// 			});
-	// 		}
-	// 		case "count_trend": {
-	// 			let countWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'count_trend');
-	// 			return this.dashboardWidgetsArray.push({
-	// 				cols: 5,
-	// 				rows: 8,
-	// 				x: 0,
-	// 				y: 0,
-	// 				component: BarchartComponent,
-	// 				widgetname: countWidget.name,
-	// 				uiidentifier: countWidget.uiidentifier,
-	// 				filters: {}, // need to update this code
-	// 				properties: {},
-	// 				dashboardid: this.dashboardId,
-	// 				widgetid: countWidget.id,
-	// 				id: 0,
-	// 				url: countWidget.url
-	// 			});
-	// 		}
-	// 	}
-	// }
-
 	changedOptions() {
 		this.options.api.optionsChanged();
 	}
@@ -310,16 +254,25 @@ export class PublicComponent implements OnInit {
 		this.itemChange();
 	}
 
-	// static itemResize(item, itemComponent) {
-		// console.info('itemResized', item, itemComponent);
-	// }
 
 	onWidgetParametersFormSubmit() {
 		let formValues = this.widgetParametersForm.value;
-		let startDate = this.dateTime.moment(formValues.Filters.daterange[0]).format('MM/YYYY');
-		let endDate = this.dateTime.moment(formValues.Filters.daterange[1]).format('MM/YYYY');
+
+		let startDate;
+		let endDate;
+		if(formValues.Filters.dateTypes === 'Custom') {
+			startDate = this.dateTime.moment(formValues.Filters.daterange[0]).format('MM/YYYY');
+			endDate = this.dateTime.moment(formValues.Filters.daterange[1]).format('MM/YYYY');
+		} else {
+			let timePeriodRange = this.dateTime.timePeriodRange(formValues.Filters.dateTypes);
+			startDate = timePeriodRange.startDate;
+			endDate = timePeriodRange.endDate;
+		}		
 		formValues.Filters.daterange = `${startDate}-${endDate}`;
-		debugger
+		// why it is not copying without reference :/ idiot
+		let copyFormValues =  Object.assign({}, formValues);
+		delete formValues.Filters.dateTypes;
+		delete formValues.Filters.date;
 		const { url } = this.barChartWidgetParameters;
 		this.emitter.loadingStatus(true);
 		this.dashboardService.getWidgetIndex(url, formValues).subscribe(result => {
@@ -328,13 +281,49 @@ export class PublicComponent implements OnInit {
 				data: {
 					result,
 					barChartWidgetParameters: this.barChartWidgetParameters,
-					barChartWidgetParameterValues: formValues
+					barChartWidgetParameterValues: copyFormValues
 				}
 			})
 			this.emitter.loadingStatus(false);
 		}, error => {
-			debugger
+			console.log('onWidgetParametersFormSubmit', error);
 			this.emitter.loadingStatus(false);
 		})
+	}
+	customDateTypes(event) {
+		// debugger
+	}
+
+	addLoaderToTrees(add = true){
+		let load = false;
+		if(add === false){
+		  load = true;
+		}
+		this.treesArray.forEach((itm:any) => {
+		  itm.loaded = load;
+		});
+	}
+
+	syncSelectedNodesArray(event, treeRef){
+	  console.log('cheked ');//, treeRef);
+	  treeRef.loaded = true;
+	  //this.selectedData.checked = this.permissionsTree.checkedNodes;
+	}
+
+	createTrees(treesData){
+		treesData.forEach((itm:any)=>{
+			let settings = { dataSource: [itm], id: 'id', text: 'name', title: 'name', child: 'children', hasChildren: 'children' };
+			this.treesArray.push({
+				name: itm.name,
+				settings: settings,
+				checkedNodes: [],
+				id: itm.id,
+				elementId: `permissions_tree_${itm.id}`,
+				loaded: true
+			});
+			console.log('this.treesArray ->',this.treesArray);
+		});
+
+		this.isTreeLoaded = true;
 	}
 }

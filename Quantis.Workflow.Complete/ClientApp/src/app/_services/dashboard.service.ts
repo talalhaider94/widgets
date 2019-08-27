@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { WidgetModel, DashboardModel, DashboardContentModel } from '../_models';
-import { UUID } from 'angular2-uuid';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -78,7 +77,7 @@ export class DashboardService {
 					widgetid: widget.widgetid,
 					dashboardid: widget.dashboardid,
 					uiidentifier: widget.uiidentifier,
-					id: widget.id
+					id: (typeof widget.id === "number") ? widget.id : 0  // for new / cloned widgets id will be zero
 				}
 			});
 		}
@@ -99,6 +98,12 @@ export class DashboardService {
 	getWidgetIndex(url: string, formValues: any): Observable<any> {
 		const widgetIndexEndPoint = `${environment.API_URL}/${url}/Index`;
 		return this.http.post(widgetIndexEndPoint, formValues, { observe: 'response' });
+	}
+
+	// GetOrganizationHierarcy
+	GetOrganizationHierarcy(): Observable<any> {
+		// return this.http.get<Array<DashboardModel>>('http://localhost:3000/dashboards');
+		return this.http.get(`${environment.API_URL}/globalfilter/GetOrganizationHierarcy?globalFilterId=0`);
 	}
 
 }

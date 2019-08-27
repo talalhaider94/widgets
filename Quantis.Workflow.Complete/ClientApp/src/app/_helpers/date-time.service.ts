@@ -40,4 +40,24 @@ export class DateTimeService {
     return dateRangeArray;
   }
 
+  timePeriodRange(rangeType) {
+    let startDate;
+    let endDate;
+
+    if(rangeType === 'Last 2 Months') {
+      startDate = moment().format('MM/YYYY');
+      endDate = moment().subtract(2, 'months').format('MM/YYYY');
+    } else if(rangeType === 'Last 3 Months') {
+      startDate = moment().format('MM/YYYY');
+      endDate = moment().subtract(3, 'months').format('MM/YYYY');
+    } else if(rangeType === 'Last 6 Months') {
+      startDate = moment().format('MM/YYYY');
+      endDate = moment().subtract(6, 'months').format('MM/YYYY');
+    } else if(rangeType === 'Last Month') {
+      startDate = moment().format('MM/YYYY');
+      endDate = moment().subtract(1, 'months').format('MM/YYYY');
+    }
+    return { startDate, endDate }
+  }
+
 }

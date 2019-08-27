@@ -10,6 +10,7 @@ import { HighchartsChartModule } from 'highcharts-angular';
 import { CollapseModule } from 'ngx-bootstrap/collapse';
 import { ModalModule } from 'ngx-bootstrap/modal';
 import { TabsModule } from 'ngx-bootstrap/tabs';
+import { TreeViewModule } from '@syncfusion/ej2-angular-navigations';
 
 import { DashboardComponent } from './dashboard.component';
 import { DashboardRoutingModule } from './dashboard-routing.module';
@@ -21,7 +22,7 @@ import { MenuComponent } from '../../widgets/menu/menu.component';
 import { PublicComponent } from './public/public.component';
 import { DashboardListsComponent } from './dashboard-lists/dashboard-lists.component';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
-
+import { KpiCountSummaryComponent } from '../../widgets/kpi-count-summary/kpi-count-summary.component';
 @NgModule({
   imports: [
     FormsModule,
@@ -33,12 +34,14 @@ import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
     ButtonsModule.forRoot(),
     CollapseModule.forRoot(),
     CommonModule,
+    TreeViewModule,
     GridsterModule,
     DynamicModule.withComponents([
       LineChartComponent,
       DoughnutChartComponent,
       RadarChartComponent,
-      BarchartComponent
+      BarchartComponent,
+      KpiCountSummaryComponent
     ]),
     HighchartsChartModule,
     ModalModule.forRoot(),
@@ -52,7 +55,8 @@ import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
     MenuComponent,
     BarchartComponent,
     PublicComponent,
-    DashboardListsComponent
+    DashboardListsComponent,
+    KpiCountSummaryComponent
   ]
 })
 export class DashboardModule { }
