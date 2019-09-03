@@ -27,6 +27,19 @@ export class BarchartComponent implements OnInit {
 	editWidgetName: boolean = true;
 	@Output()
 	barChartParent = new EventEmitter<any>();
+
+	public barChartData: Array<any> = [
+		{ data: [65, 59, 80, 81, 56, 55, 40], label: 'Series A' }
+	];
+
+	public barChartLabels: Array<any> = [];
+	public barChartOptions: any = {
+		responsive: true,
+		legend: { position: 'bottom' },
+	};
+	public barChartLegend: boolean = true;
+	public barChartType: string = 'bar';
+
 	constructor(
 		private dashboardService: DashboardService,
 		private emitter: EmitterService,
@@ -35,18 +48,19 @@ export class BarchartComponent implements OnInit {
 	) { }
 
 	ngOnInit() {
-		console.log('CURRENT ROUTE', this.router.url);
+		console.log('BarchartComponent Count Trend', this.widgetname, this.url, this.id, this.widgetid, this.filters, this.properties);
 		if (this.router.url.includes('dashboard/public')) {
 			this.editWidgetName = false;
 		}
-		console.log('BarchartComponent', this.widgetname, this.url, this.id, this.widgetid, this.filters, this.properties);
 		if (this.url) {
 			this.emitter.loadingStatus(true);
-			// this.getWidgetParameters(this.url);
-			// this.getWidgetIndex(this.url);
 			this.getChartParametersAndData(this.url);
 		}
-		// coming from dashboard component
+		// coming from dashboard or public parent components
+		this.subscriptionForDataChangesFromParent()
+	}
+
+	subscriptionForDataChangesFromParent() {
 		this.emitter.getData().subscribe(result => {
 			const { type, data } = result;
 			if (type === 'barChart') {
@@ -59,7 +73,7 @@ export class BarchartComponent implements OnInit {
 					this.updateChart(data.result.body, data, null);
 				}
 			}
-		})
+		});
 	}
 	// invokes on component initialization
 	getChartParametersAndData(url) {
@@ -137,22 +151,12 @@ export class BarchartComponent implements OnInit {
 		});
 	}
 
-	// barChart
-	public barChartData: Array<any> = [
-		{ data: [65, 59, 80, 81, 56, 55, 40], label: 'Series A' }
-	];
-
-	public barChartLabels: Array<any> = [];
-	public barChartOptions: any = {
-		responsive: true,
-		legend: { position: 'bottom' }
-	};
-	public barChartLegend: boolean = true;
-	public barChartType: string = 'bar'; 
-
 	// events
 	public chartClicked(e: any): void {
-		console.log("Bar Chart Clicked ->",e);
+		console.log("Bar Chart Clicked ->", e);
+		//this.router.navigate(['/workflow/verifica'], {state: {data: {month:'all', year:'19', key: 'bar_chart'}}});
+		let params = { month: 'all', year: '19', key: 'bar_chart' };
+		window.open(`/#/workflow/verifica/?m=${params.month}&y=${params.year}&k=${params.key}`, '_blank');
 	}
 
 	public chartHovered(e: any): void {
@@ -161,27 +165,30 @@ export class BarchartComponent implements OnInit {
 
 	openModal() {
 		console.log('OPEN MODAL BAR CHART PARAMS', this.barChartWidgetParameters);
-		console.log('OPEN MODAL BAR CHART VALUES', this.setWidgetFormValues)
+		console.log('OPEN MODAL BAR CHART VALUES', this.setWidgetFormValues);
 		this.barChartParent.emit({
 			type: 'openBarChartModal',
 			data: {
 				barChartWidgetParameters: this.barChartWidgetParameters,
-				setWidgetFormValues: this.setWidgetFormValues
+				setWidgetFormValues: this.setWidgetFormValues,
+				isBarChartComponent: true
 			}
 		});
 	}
 	closeModal() {
-		this.barChartParent.emit({ type: 'closeModal' });
+		this.emitter.sendNext({ type: 'closeModal' });
 	}
 	// dashboardComponentData is result of data coming from 
 	// posting data to parameters widget
-
-	/// To be used ////
 	updateChart(chartIndexData, dashboardComponentData, currentWidgetComponentData) {
 		let label = 'Series';
 		if (dashboardComponentData) {
 			let measureIndex = dashboardComponentData.barChartWidgetParameterValues.Properties.measure;
 			label = dashboardComponentData.barChartWidgetParameters.measures[measureIndex];
+			let charttype = dashboardComponentData.barChartWidgetParameterValues.Properties.charttype;
+			setTimeout(() => {
+				this.barChartType = charttype;
+			});
 		}
 		if (currentWidgetComponentData) {
 			// setting chart label and type on first load
