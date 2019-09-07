@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CustomTooltips } from '@coreui/coreui-plugin-chartjs-custom-tooltips';
-import { DateTimeService } from '../../_helpers';
+import { DateTimeService, WidgetsHelper } from '../../_helpers';
 import { mergeMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { DashboardService, EmitterService } from '../../_services';
@@ -79,6 +79,10 @@ export class KpiCountSummaryComponent implements OnInit {
 			this.getChartParametersAndData(this.url);
 		}
 		// coming from dashboard component
+		this.subscriptionForDataChangesFromParent();
+	}
+
+	subscriptionForDataChangesFromParent() {
 		this.emitter.getData().subscribe(result => {
 			const { type, data } = result;
 			if (type === 'kpiCountSummaryChart') {
@@ -103,26 +107,13 @@ export class KpiCountSummaryComponent implements OnInit {
 			mergeMap((getWidgetParameters: any) => {
 				myWidgetParameters = getWidgetParameters;
 				// Map Params for widget index when widgets initializes for first time
-				let params = {
-					GlobalFilterId: 0,
-					Properties: {
-						measure: Object.keys(getWidgetParameters.measures)[0],
-						charttype: Object.keys(getWidgetParameters.charttypes)[0],
-						aggregationoption: Object.keys(getWidgetParameters.aggregationoptions)[0]
-					},
-					Filters: {
-						daterange: getWidgetParameters.defaultdaterange
-					},
-					Note: ''
-				};
-				/// To be used -> getWidgetIndex method ////
-				return this.dashboardService.getWidgetIndex(url, params);
+				let newParams = WidgetsHelper.initWidgetParameters(getWidgetParameters, this.filters, this.properties);
+				return this.dashboardService.getWidgetIndex(url, newParams);
 			})
 		).subscribe(getWidgetIndex => {
 			// populate modal with widget parameters
 			console.log('KPI COUNT SUMMARY getWidgetIndex', getWidgetIndex);
 			console.log('KPI COUNT SUMMARY myWidgetParameters', myWidgetParameters);
-
 			let kpiCountSummaryParams;
 			if (myWidgetParameters) {
 				kpiCountSummaryParams = {
@@ -170,40 +161,18 @@ export class KpiCountSummaryComponent implements OnInit {
 	}
 
 	updateChart(chartIndexData, dashboardComponentData, currentWidgetComponentData) {
-		let label = 'Series';
-		if (dashboardComponentData) {
-			let measureIndex = dashboardComponentData.barChartWidgetParameterValues.Properties.measure;
-			label = dashboardComponentData.barChartWidgetParameters.measures[measureIndex];
-			let charttype = dashboardComponentData.barChartWidgetParameterValues.Properties.charttype;
-		}
-		if (currentWidgetComponentData) {
-			// setting chart label and type on first load
-			label = currentWidgetComponentData.measures[0];
-		}
-		// temporary fix because getting single object instead of array
-		let temporaryFix = [chartIndexData];
-		let allLabels = temporaryFix.map(label => label.xvalue);
-		let allData = temporaryFix.map(data => data.yvalue);
-		// setTimeout(()=> {
-		this.sumKPICount = allData.reduce((total, currentValue) => total + currentValue, 0);
-		// })
-
-		this.barChart1Data = [{ data: allData, label: label }]
-		this.barChart1Labels.length = 0;
-		this.barChart1Labels.push(...allLabels);
+		this.sumKPICount = chartIndexData.yvalue;
 		this.closeModal();
 	}
 
 	widgetnameChange(event) {
 		console.log('widgetnameChange', this.id, event);
-		this.kpiCountSummaryParent.emit({
-			type: 'changeKpiCountSummaryWidgetName',
+		this.emitter.sendNext({
+			type: 'changeWidgetName',
 			data: {
-				kpiCountSummaryChart: {
-					widgetname: event,
-					id: this.id,
-					widgetid: this.widgetid
-				}
+				widgetname: event,
+				id: this.id,
+				widgetid: this.widgetid
 			}
 		});
 	}

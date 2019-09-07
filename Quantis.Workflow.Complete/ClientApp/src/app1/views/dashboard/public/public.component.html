@@ -3,7 +3,6 @@
     <button class="btn btn-success m-2" (click)="saveDashboardState()">Salva</button>
   </div>
 </div>
-
 <!-- Gridster grid -->
 <gridster [options]="options" class="bg-white">
   <!-- Earch grister-item is generated with *ngFor -->
@@ -63,6 +62,20 @@
             <!-- FILTERS -->
             <tab heading="FILTRI">
               <div formGroupName="Filters">
+                <label for="">Contraente e Contratto</label>
+                <perfect-scrollbar style="max-height: 260px;">
+                <div *ngFor="let treeObj of treesArray; let i = index" >
+                  <span [hidden]="treeObj.loaded" class="fa fa-spinner text-primary" style="padding-left: 35px; height: 35px;">loading..</span>
+                  <ejs-treeview [hidden]="!treeObj.loaded"
+                    #permissionsTree 
+                    id="{{treeObj.elementId}}" 
+                    [fields]='treeObj.settings' 
+                    [showCheckBox]='true' 
+                    [checkedNodes]="['1075','1000','1065','1055','1090','1050','1005','1015','1085','1080','1020','1001']" 
+                    (nodeChecked)='syncSelectedNodesArray($event, treeObj)' >
+                  </ejs-treeview>
+                </div>
+                </perfect-scrollbar><br>
                 <div class="form-group">
                   <label for="dateTypes">Tipi di data</label><!-- Date Type -->
                   <select class="form-control" id="dateTypes" formControlName="dateTypes"
@@ -75,30 +88,50 @@
                 </div>
                 <span *ngIf="showDateRangeInFilters">
                   <div class="form-group" *ngIf="barChartWidgetParameters.showdaterangefilter">
-                    <label for="daterange">Intervallo di date</label><!-- Date Range -->
+                    <!-- Date Range -->
+                    <!-- <label for="daterange">Intervallo di date</label>
                     <input type="text" formControlName="daterange" placeholder="Pick Date Range" class="form-control"
-                      bsDaterangepicker [bsConfig]="{ rangeInputFormat: 'MM/YYYY' }">
+                      bsDaterangepicker [bsConfig]="{ rangeInputFormat: 'MM/YYYY' }"> -->
+                    <label for="daterange">Intervallo di date</label><br>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label for="fromdate" style="text-align: center">From</label>
+                        <form class="container1">
+                          <input autocomplete="off" class="form-control" name="date" 
+                          bsDatepicker [bsConfig]="{dateInputFormat: 'MM/YYYY',adaptivePosition: true}" 
+                          (onShown)="fromCalendar($event)">
+                          <!-- Result: <p>{{modelDate}}</p> -->
+                        </form>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="todate">To</label>
+                        <form class="container2">
+                          <input autocomplete="off" class="form-control" name="date" 
+                          bsDatepicker [bsConfig]="{dateInputFormat: 'MM/YYYY',adaptivePosition: true}" 
+                          (onShown)="toCalendar($event)">
+                          <!-- Result: <p>{{modelDate}}</p> -->
+                        </form>
+                      </div>
+                    </div> 
                   </div>
                 </span>
-                <!-- current showdatefilter is coming false so while developing ! is added will remove later -->
                 <span *ngIf="showDateInFilters">
-                  <div class="form-group" *ngIf="!barChartWidgetParameters.showdatefilter">
+                  <div class="form-group" *ngIf="barChartWidgetParameters.showdatefilter">
                     <label for="date">Seleziona la data</label><!-- Select Date -->
                     <input type="text" formControlName="date" placeholder="Pick Date" class="form-control" bsDatepicker
                       [bsConfig]="{ dateInputFormat: 'MM/YYYY', minMode: 'month' }">
                   </div>
                 </span>
-                <div *ngFor="let treeObj of treesArray; let i = index" >
-                  <span [hidden]="treeObj.loaded" class="fa fa-spinner text-primary" style="padding-left: 35px; height: 35px;">loading..</span>
-                  <ejs-treeview [hidden]="!treeObj.loaded"
-                    #permissionsTree 
-                    id="{{treeObj.elementId}}" 
-                    [fields]='treeObj.settings' 
-                    [showCheckBox]='true' 
-                    [checkedNodes]="treeObj.checkedNodes" 
-                    (nodeChecked)='syncSelectedNodesArray($event, treeObj)' >
-                  </ejs-treeview>
-                </div>
+                <span *ngIf="barChartWidgetParameters.showorganization">
+                  <div *ngFor="let treeObj of treesArray; let i = index">
+                    <span [hidden]="treeObj.loaded" class="fa fa-spinner text-primary"
+                      style="padding-left: 35px; height: 35px;">loading..</span>
+                    <ejs-treeview [hidden]="!treeObj.loaded" #permissionsTree id="{{treeObj.elementId}}"
+                      [fields]='treeObj.settings' [showCheckBox]='true' [checkedNodes]="treeObj.checkedNodes"
+                      (nodeChecked)='syncSelectedNodesArray($event, treeObj)'>
+                    </ejs-treeview>
+                  </div>
+                </span>
               </div>
             </tab>
             <!-- HELP -->

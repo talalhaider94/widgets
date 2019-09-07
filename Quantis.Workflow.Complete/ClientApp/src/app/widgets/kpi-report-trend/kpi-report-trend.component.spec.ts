@@ -1,20 +1,20 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DashboardListsComponent } from './dashboard-lists.component';
+import { KpiReportTrendComponent } from './kpi-report-trend.component';
 
-describe('DashboardListsComponent', () => {
-  let component: DashboardListsComponent;
-  let fixture: ComponentFixture<DashboardListsComponent>;
+describe('KpiReportTrendComponent', () => {
+  let component: KpiReportTrendComponent;
+  let fixture: ComponentFixture<KpiReportTrendComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ DashboardListsComponent ]
+      declarations: [ KpiReportTrendComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(DashboardListsComponent);
+    fixture = TestBed.createComponent(KpiReportTrendComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

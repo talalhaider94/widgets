@@ -4,16 +4,20 @@ import { DashboardService, EmitterService } from '../../_services';
 import { DateTimeService } from '../../_helpers';
 import { ActivatedRoute } from '@angular/router';
 import { DashboardModel, DashboardContentModel, WidgetModel, ComponentCollection } from '../../_models';
-import { Subscription, forkJoin } from 'rxjs';
+import { Subscription, forkJoin, interval } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { ApiService } from '../../_services/api.service';
 // importing chart components
 import { LineChartComponent } from '../../widgets/line-chart/line-chart.component';
 import { DoughnutChartComponent } from '../../widgets/doughnut-chart/doughnut-chart.component';
 import { RadarChartComponent } from '../../widgets/radar-chart/radar-chart.component';
 import { BarchartComponent } from '../../widgets/barchart/barchart.component';
 import { KpiCountSummaryComponent } from '../../widgets/kpi-count-summary/kpi-count-summary.component';
+import { CatalogPendingCountTrendsComponent } from '../../widgets/catalog-pending-count-trends/catalog-pending-count-trends.component';
+import { DistributionByUserComponent } from '../../widgets/distribution-by-user/distribution-by-user.component';
+
 import { UUID } from 'angular2-uuid';
 @Component({
 	templateUrl: 'dashboard.component.html',
@@ -39,10 +43,13 @@ export class DashboardComponent implements OnInit {
 		{ name: "Radar Chart", componentInstance: RadarChartComponent, uiidentifier: "not_implemented" },
 		{ name: "Count Trend", componentInstance: BarchartComponent, uiidentifier: "count_trend" },
 		{ name: "KPI Count Summary", componentInstance: KpiCountSummaryComponent, uiidentifier: "kpi_count_summary" },
+		{ name: "Catalog Pending Count Trends", componentInstance: CatalogPendingCountTrendsComponent, uiidentifier: "catalog_pending_count_trends" },
+		{ name: "Distribution by User", componentInstance: DistributionByUserComponent, uiidentifier: "distribution_by_user" },
 	];
 	helpText: string = '';
 	constructor(
 		private dashboardService: DashboardService,
+		private apiService: ApiService,
 		private _route: ActivatedRoute,
 		private emitter: EmitterService,
 		private toastr: ToastrService,
@@ -52,9 +59,6 @@ export class DashboardComponent implements OnInit {
 
 	outputs = {
 		barChartParent: childData => {
-			// if (childData.type === 'barChartParams') {
-			// 	this.barChartWidgetParameters = childData.data;
-			// }
 			if (childData.type === 'openBarChartModal') {
 				this.barChartWidgetParameters = childData.data.barChartWidgetParameters;
 				if (this.barChartWidgetParameters) {
@@ -86,14 +90,53 @@ export class DashboardComponent implements OnInit {
 				console.log('updatedDashboardWidgetsArray', updatedDashboardWidgetsArray);
 				this.dashboardCollection.dashboardwidgets = updatedDashboardWidgetsArray;
 			}
+		},
+		kpiCountSummaryParent: childData => {
+			console.log('kpiCountSummaryParent childData', childData);
+			if (childData.type === 'changeKpiCountSummaryWidgetName') {
+				let kpiCountSummaryChartdata = childData.data.kpiCountSummaryChart;
+				let dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets;
+				let updatedDashboardWidgetsArray = dashboardWidgetsArray.map(widget => {
+					if(widget.id === kpiCountSummaryChartdata.id && widget.widgetid === kpiCountSummaryChartdata.widgetid){
+						let updatename = {
+							...widget,
+							widgetname: kpiCountSummaryChartdata.widgetname,
+						}
+						return updatename;
+					} else {
+						return widget;
+					}
+				});
+				this.dashboardCollection.dashboardwidgets = updatedDashboardWidgetsArray;
+			}
+		},
+		verificaDoughnutParent: childData => {
+			console.log('verificaDoughnutParent childData', childData);
+			if (childData.type === 'changeVerificaDoughnutChartWidgetName') {
+				let verificaDoughnutChartdata = childData.data.verificaDoughnutChart;
+				let dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets;
+				let updatedDashboardWidgetsArray = dashboardWidgetsArray.map(widget => {
+					if(widget.id === verificaDoughnutChartdata.id && widget.widgetid === verificaDoughnutChartdata.widgetid){
+						let updatename = {
+							...widget,
+							widgetname: verificaDoughnutChartdata.widgetname,
+						}
+						return updatename;
+					} else {
+						return widget;
+					}
+				});
+				this.dashboardCollection.dashboardwidgets = updatedDashboardWidgetsArray;
+			}
 		}
 	};
 
 	componentCreated(compRef: ComponentRef<any>) {
-		console.log('Component Created', compRef);
+		// console.log('Component Created', compRef);
 	}
 
 	ngOnInit(): void {
+		//Danial: form is unnecessary here in this component now remove it later
 		this.widgetParametersForm = this.formBuilder.group({
 			GlobalFilterId: [null],
 			Properties: this.formBuilder.group({
@@ -147,6 +190,17 @@ export class DashboardComponent implements OnInit {
 			this.emitter.loadingStatus(true);
 			this.getData(this.dashboardId);
 		});
+		//Danial: need to improve method to call only dashboard widgets and remove widgets call
+		this.apiService.getSeconds().subscribe((data: any) => {
+			var secondsValue = data + '000';
+			var seconds = parseInt(secondsValue);
+			console.log("Auto Refresh Seconds: ",seconds);
+			 
+			interval(seconds).subscribe(count => {
+				this.getData(this.dashboardId);
+			})
+		}); 
+		
 	}
 
 	getData(dashboardId: number) {
@@ -176,23 +230,9 @@ export class DashboardComponent implements OnInit {
 			this.emitter.loadingStatus(false);
 			this.toastr.error('Error while fetching dashboards');
 			console.error('Get Dashboard Data', error);
-		})
+		});
 
 	}
-	// might have to re-use it later when updating dashboard on save.
-	// getDashboardWidgetsData(dashboardId) {
-	// 	this.emitter.loadingStatus(true);
-	// 	this.dashboardService.getDashboard(dashboardId).subscribe(dashboard => {
-	// 		this.dashboardCollection = dashboard;
-	// 		this.parseJson(this.dashboardCollection);
-	// 		this.dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets.slice();
-	// 		this.emitter.loadingStatus(false);
-	// 	}, error => {
-	// 		console.log('getDashboardWidgetsData', error);
-	// 		this.toastr.error('Error while fetching dashboards');
-	// 		this.emitter.loadingStatus(false);
-	// 	});
-	// }
 
 	// need to move this to dashboard service as well
 	parseJson(dashboardCollection: DashboardModel) {
@@ -288,7 +328,9 @@ export class DashboardComponent implements OnInit {
 				let doughnutWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'distribution_by_verifica');
 				return this.dashboardWidgetsArray.push({
 					cols: 5,
-					rows: 6,
+					rows: 5,
+					minItemCols: 5,
+					minItemRows: 5,
 					x: 0,
 					y: 0,
 					component: DoughnutChartComponent,
@@ -305,8 +347,10 @@ export class DashboardComponent implements OnInit {
 			case "count_trend": {
 				let countWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'count_trend');
 				return this.dashboardWidgetsArray.push({
-					cols: 4,
-					rows:6,
+					cols: 5,
+					minItemCols: 5,
+					minItemRows: 5,
+					rows:5,
 					x: 0,
 					y: 0,
 					component: BarchartComponent,
@@ -323,8 +367,10 @@ export class DashboardComponent implements OnInit {
 			case "kpi_count_summary": {
 				let summaryWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'kpi_count_summary');
 				return this.dashboardWidgetsArray.push({
-					cols: 4,
-					rows:4,
+					cols: 6,
+					rows:6,
+					minItemCols: 6,
+					minItemRows: 6,
 					x: 0,
 					y: 0,
 					component: KpiCountSummaryComponent,
@@ -336,6 +382,46 @@ export class DashboardComponent implements OnInit {
 					widgetid: summaryWidget.id,
 					id: 0,
 					url: summaryWidget.url
+				});
+			}
+			case "distribution_by_user": {
+				let distributionWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'distribution_by_user');
+				return this.dashboardWidgetsArray.push({
+					cols: 5,
+					rows: 5,
+					minItemCols: 5,
+					minItemRows: 5,
+					x: 0,
+					y: 0,
+					component: DistributionByUserComponent,
+					widgetname: distributionWidget.name,
+					uiidentifier: distributionWidget.uiidentifier,
+					filters: {}, // need to update this code
+					properties: {},
+					dashboardid: this.dashboardId,
+					widgetid: distributionWidget.id,
+					id: 0,
+					url: distributionWidget.url
+				});
+			}
+			case "catalog_pending_count_trends": {
+				let catalogWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'catalog_pending_count_trends');
+				return this.dashboardWidgetsArray.push({
+					cols: 5,
+					rows: 6,
+					minItemCols: 5,
+					minItemRows: 6,
+					x: 0,
+					y: 0,
+					component: CatalogPendingCountTrendsComponent,
+					widgetname: catalogWidget.name,
+					uiidentifier: catalogWidget.uiidentifier,
+					filters: {}, // need to update this code
+					properties: {},
+					dashboardid: this.dashboardId,
+					widgetid: catalogWidget.id,
+					id: 0,
+					url: catalogWidget.url
 				});
 			}
 		}

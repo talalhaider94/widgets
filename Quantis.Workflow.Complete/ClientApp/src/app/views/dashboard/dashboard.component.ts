@@ -12,13 +12,15 @@ import { ApiService } from '../../_services/api.service';
 // importing chart components
 import { LineChartComponent } from '../../widgets/line-chart/line-chart.component';
 import { DoughnutChartComponent } from '../../widgets/doughnut-chart/doughnut-chart.component';
-import { RadarChartComponent } from '../../widgets/radar-chart/radar-chart.component';
 import { BarchartComponent } from '../../widgets/barchart/barchart.component';
 import { KpiCountSummaryComponent } from '../../widgets/kpi-count-summary/kpi-count-summary.component';
 import { CatalogPendingCountTrendsComponent } from '../../widgets/catalog-pending-count-trends/catalog-pending-count-trends.component';
 import { DistributionByUserComponent } from '../../widgets/distribution-by-user/distribution-by-user.component';
-
+import { KpiReportTrendComponent } from '../../widgets/kpi-report-trend/kpi-report-trend.component';
+import { NotificationTrendComponent } from '../../widgets/notification-trend/notification-trend.component';
+import { KpiCountByOrganizationComponent } from '../../widgets/kpi-count-by-organization/kpi-count-by-organization.component';
 import { UUID } from 'angular2-uuid';
+
 @Component({
 	templateUrl: 'dashboard.component.html',
 	styleUrls: ['dashboard.component.scss']
@@ -40,11 +42,13 @@ export class DashboardComponent implements OnInit {
 	componentCollection = [
 		{ name: "Line Chart", componentInstance: LineChartComponent, uiidentifier: "not_implemented" },
 		{ name: "Distribution by Verifica", componentInstance: DoughnutChartComponent, uiidentifier: "distribution_by_verifica" },
-		{ name: "Radar Chart", componentInstance: RadarChartComponent, uiidentifier: "not_implemented" },
 		{ name: "Count Trend", componentInstance: BarchartComponent, uiidentifier: "count_trend" },
 		{ name: "KPI Count Summary", componentInstance: KpiCountSummaryComponent, uiidentifier: "kpi_count_summary" },
 		{ name: "Catalog Pending Count Trends", componentInstance: CatalogPendingCountTrendsComponent, uiidentifier: "catalog_pending_count_trends" },
 		{ name: "Distribution by User", componentInstance: DistributionByUserComponent, uiidentifier: "distribution_by_user" },
+		{ name: "KPI Report Trend", componentInstance: KpiReportTrendComponent, uiidentifier: "kpi_report_trend" },
+		{ name: "Notification Trend", componentInstance: NotificationTrendComponent, uiidentifier: "notification_trend" },
+		{ name: "KPI count by Organization", componentInstance: KpiCountByOrganizationComponent, uiidentifier: "kpi_count_by_organization" },
 	];
 	helpText: string = '';
 	constructor(
@@ -77,7 +81,7 @@ export class DashboardComponent implements OnInit {
 				let dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets;
 				console.log('dashboardWidgetsArray', dashboardWidgetsArray);
 				let updatedDashboardWidgetsArray = dashboardWidgetsArray.map(widget => {
-					if(widget.id === barChartdata.id && widget.widgetid === barChartdata.widgetid){
+					if (widget.id === barChartdata.id && widget.widgetid === barChartdata.widgetid) {
 						let updatename = {
 							...widget,
 							widgetname: barChartdata.widgetname,
@@ -97,7 +101,7 @@ export class DashboardComponent implements OnInit {
 				let kpiCountSummaryChartdata = childData.data.kpiCountSummaryChart;
 				let dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets;
 				let updatedDashboardWidgetsArray = dashboardWidgetsArray.map(widget => {
-					if(widget.id === kpiCountSummaryChartdata.id && widget.widgetid === kpiCountSummaryChartdata.widgetid){
+					if (widget.id === kpiCountSummaryChartdata.id && widget.widgetid === kpiCountSummaryChartdata.widgetid) {
 						let updatename = {
 							...widget,
 							widgetname: kpiCountSummaryChartdata.widgetname,
@@ -116,7 +120,7 @@ export class DashboardComponent implements OnInit {
 				let verificaDoughnutChartdata = childData.data.verificaDoughnutChart;
 				let dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets;
 				let updatedDashboardWidgetsArray = dashboardWidgetsArray.map(widget => {
-					if(widget.id === verificaDoughnutChartdata.id && widget.widgetid === verificaDoughnutChartdata.widgetid){
+					if (widget.id === verificaDoughnutChartdata.id && widget.widgetid === verificaDoughnutChartdata.widgetid) {
 						let updatename = {
 							...widget,
 							widgetname: verificaDoughnutChartdata.widgetname,
@@ -194,13 +198,34 @@ export class DashboardComponent implements OnInit {
 		this.apiService.getSeconds().subscribe((data: any) => {
 			var secondsValue = data + '000';
 			var seconds = parseInt(secondsValue);
-			console.log("Auto Refresh Seconds: ",seconds);
-			 
+			console.log("Auto Refresh Seconds: ", seconds);
+
 			interval(seconds).subscribe(count => {
 				this.getData(this.dashboardId);
 			})
-		}); 
-		
+		});
+		this.changeWidgetName();
+
+	}
+
+	changeWidgetName() {
+		this.emitter.getData().subscribe(data => {
+			if (data.type === 'changeWidgetName') {
+				// change widget name code start
+				let dashboardWidgetsArray = this.dashboardCollection.dashboardwidgets;
+				let updatedDashboardWidgetsArray = dashboardWidgetsArray.map(widget => {
+					console.log(widget.id, data.data.id, widget.widgetid, data.data.widgetid);
+					if (widget.id === data.data.id && widget.widgetid === data.data.widgetid) {
+						let updatename = { ...widget, widgetname: data.data.widgetname };
+						return updatename;
+					} else {
+						return widget;
+					}
+				});
+				this.dashboardCollection.dashboardwidgets = updatedDashboardWidgetsArray;
+				// change widget name code end
+			}
+		})
 	}
 
 	getData(dashboardId: number) {
@@ -288,24 +313,6 @@ export class DashboardComponent implements OnInit {
 	onDrop(ev) {
 		const componentType = ev.dataTransfer.getData("widgetIdentifier");
 		switch (componentType) {
-			case "radar_chart": {
-				let radarWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'radar_chart');
-				return this.dashboardWidgetsArray.push({
-					cols: 5,
-					rows: 5,
-					x: 0,
-					y: 0,
-					component: RadarChartComponent,
-					widgetname: radarWidget.name,
-					uiidentifier: radarWidget.uiidentifier,
-					filters: {}, // need to update this code
-					properties: {},
-					dashboardid: this.dashboardId,
-					widgetid: radarWidget.id,
-					id: 0, // 0 because we are adding them
-					url: radarWidget.url
-				});
-			}
 			case "line_chart": {
 				let lineWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'line_chart');
 				return this.dashboardWidgetsArray.push({
@@ -350,7 +357,7 @@ export class DashboardComponent implements OnInit {
 					cols: 5,
 					minItemCols: 5,
 					minItemRows: 5,
-					rows:5,
+					rows: 5,
 					x: 0,
 					y: 0,
 					component: BarchartComponent,
@@ -368,7 +375,7 @@ export class DashboardComponent implements OnInit {
 				let summaryWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'kpi_count_summary');
 				return this.dashboardWidgetsArray.push({
 					cols: 6,
-					rows:6,
+					rows: 6,
 					minItemCols: 6,
 					minItemRows: 6,
 					x: 0,
@@ -424,6 +431,66 @@ export class DashboardComponent implements OnInit {
 					url: catalogWidget.url
 				});
 			}
+			case "kpi_report_trend": {
+				let kpiReportTrendWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'kpi_report_trend');
+				return this.dashboardWidgetsArray.push({
+					cols: 5,
+					rows: 6,
+					minItemCols: 5,
+					minItemRows: 6,
+					x: 0,
+					y: 0,
+					component: KpiReportTrendComponent,
+					widgetname: kpiReportTrendWidget.name,
+					uiidentifier: kpiReportTrendWidget.uiidentifier,
+					filters: {}, // need to update this code
+					properties: {},
+					dashboardid: this.dashboardId,
+					widgetid: kpiReportTrendWidget.id,
+					id: 0,
+					url: kpiReportTrendWidget.url
+				});
+			}
+			case "notification_trend": {
+				let notificationTrendWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'notification_trend');
+				return this.dashboardWidgetsArray.push({
+					cols: 5,
+					rows: 6,
+					minItemCols: 5,
+					minItemRows: 6,
+					x: 0,
+					y: 0,
+					component: NotificationTrendComponent,
+					widgetname: notificationTrendWidget.name,
+					uiidentifier: notificationTrendWidget.uiidentifier,
+					filters: {}, // need to update this code
+					properties: {},
+					dashboardid: this.dashboardId,
+					widgetid: notificationTrendWidget.id,
+					id: 0,
+					url: notificationTrendWidget.url
+				});
+			}
+			case "kpi_count_by_organization": {
+				let kpiOragnizationWidget = this.widgetCollection.find(widget => widget.uiidentifier === 'kpi_count_by_organization');
+				return this.dashboardWidgetsArray.push({
+					cols: 5,
+					rows: 6,
+					minItemCols: 5,
+					minItemRows: 6,
+					x: 0,
+					y: 0,
+					component: NotificationTrendComponent,
+					widgetname: kpiOragnizationWidget.name,
+					uiidentifier: kpiOragnizationWidget.uiidentifier,
+					filters: {}, // need to update this code
+					properties: {},
+					dashboardid: this.dashboardId,
+					widgetid: kpiOragnizationWidget.id,
+					id: 0,
+					url: kpiOragnizationWidget.url
+				});
+			}
 		}
 	}
 
@@ -459,7 +526,7 @@ export class DashboardComponent implements OnInit {
 					barChartWidgetParameters: this.barChartWidgetParameters,
 					barChartWidgetParameterValues: formValues
 				}
-			})
+			});
 			this.emitter.loadingStatus(false);
 		}, error => {
 			console.error('getWidgetIndex', error);

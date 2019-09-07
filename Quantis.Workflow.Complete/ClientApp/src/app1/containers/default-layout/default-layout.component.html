@@ -1,9 +1,6 @@
-<app-header
-  [navbarBrandRouterLink]="['/dashboard']"
-  [fixed]="true"
-  [navbarBrandFull]="{src: 'assets/img/brand/logo.jpg', alt: 'KPI Management'}"
-  [navbarBrandMinimized]="{src: 'assets/img/brand/logo.jpg', width: 30, height: 30, alt: 'KPI Management'}"
-  [sidebarToggler]="'lg'"
+<app-header [navbarBrandRouterLink]="['/dashboard']" [fixed]="true"
+  [navbarBrandFull]="{src: 'assets/img/brand/logo.jpg',  alt: 'KPI Management'}"
+  [navbarBrandMinimized]="{src: 'assets/img/brand/logo.jpg', alt: 'KPI Management'}" [sidebarToggler]="'lg'"
   [asideMenuToggler]="'lg'">
   <ul class="nav navbar-nav d-md-down-none">
     <li class="nav-item px-3">
@@ -14,6 +11,10 @@
     <li class="nav-item" *ngIf="loading">
       <i class="fa fa-spin fa-spinner text-info fa-2x"></i>
     </li>
+    <li>
+      <a href="#" routerLink="/go-back" title="refresh"><i class="fa fa-refresh"></i></a>
+    </li>
+
     <li class="nav-item dropdown" dropdown placement="bottom right">
       <a class="nav-link" href="#" role="button" aria-haspopup="true" aria-expanded="false" dropdownToggle
         (click)="false">
@@ -55,7 +56,7 @@
     <cui-breadcrumb>
       <li class="breadcrumb-menu d-md-down-none">
         <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
-          <a class="btn text-gray">v{{currentVerion}}</a>
+          <a class="btn text-gray" href="#"><i class="icon-graph"></i> v{{currentVerion}}</a>
         </div>
       </li>
     </cui-breadcrumb>
@@ -79,10 +80,19 @@
                     {{ dashboard.name }}</a>
                 </b>
               </small>
-              <label class="switch switch-label switch-pill switch-success switch-sm float-right">
-                <input type="checkbox" class="switch-input" checked>
-                <span class="switch-slider" data-checked="On" data-unchecked="Off"></span>
-              </label>
+              <ng-container *ngIf="dashboard.isactive">
+                <label class="switch switch-label switch-pill switch-success switch-sm float-right">
+                  <input type="checkbox" class="switch-input" checked>
+                  <span class="switch-slider" data-checked="On" data-unchecked="Off"></span>
+                </label>
+              </ng-container>
+              <ng-container *ngIf="!dashboard.isactive">
+                <label class="switch switch-label switch-pill switch-success switch-sm float-right">
+                  <input type="checkbox" class="switch-input" unchecked>
+                  <span class="switch-slider" data-checked="On" data-unchecked="Off"></span>
+                </label>
+              </ng-container>
+
             </div>
           </div>
         </div>

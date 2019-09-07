@@ -4,13 +4,12 @@ import { forkJoin } from 'rxjs';
 import { DateTimeService } from '../../_helpers';
 import { mergeMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-
 @Component({
-	selector: 'app-barchart',
-	templateUrl: './barchart.component.html',
-	styleUrls: ['./barchart.component.scss']
+  selector: 'app-distribution-by-user',
+  templateUrl: './distribution-by-user.component.html',
+  styleUrls: ['./distribution-by-user.component.scss']
 })
-export class BarchartComponent implements OnInit {
+export class DistributionByUserComponent implements OnInit {
 	@Input() widgetname: string;
 	@Input() url: string;
 	@Input() filters: Array<any>;

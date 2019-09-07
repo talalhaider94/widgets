@@ -12,11 +12,13 @@ import { TreeViewComponent } from '@syncfusion/ej2-angular-navigations';
 // importing chart components
 import { LineChartComponent } from '../../../widgets/line-chart/line-chart.component';
 import { DoughnutChartComponent } from '../../../widgets/doughnut-chart/doughnut-chart.component';
-import { RadarChartComponent } from '../../../widgets/radar-chart/radar-chart.component';
 import { BarchartComponent } from '../../../widgets/barchart/barchart.component';
 import { KpiCountSummaryComponent } from '../../../widgets/kpi-count-summary/kpi-count-summary.component';
 import { CatalogPendingCountTrendsComponent } from '../../../widgets/catalog-pending-count-trends/catalog-pending-count-trends.component';
 import { DistributionByUserComponent } from '../../../widgets/distribution-by-user/distribution-by-user.component';
+import { KpiReportTrendComponent } from '../../../widgets/kpi-report-trend/kpi-report-trend.component';
+import { NotificationTrendComponent } from '../../../widgets/notification-trend/notification-trend.component';
+import { KpiCountByOrganizationComponent } from '../../../widgets/kpi-count-by-organization/kpi-count-by-organization.component';
 
 @Component({
 	selector: 'app-public',
@@ -34,6 +36,7 @@ export class PublicComponent implements OnInit {
 	@ViewChild('widgetParametersModal') public widgetParametersModal: ModalDirective;
 	barChartWidgetParameters: any;
 
+	@ViewChild('permissionsTree') permissionsTree: TreeViewComponent;
 	treesArray = [];
 	isTreeLoaded = false;
 	public treeFields: any = {
@@ -43,6 +46,9 @@ export class PublicComponent implements OnInit {
 		child: 'children',
 		title: 'name'
 	};
+	preSelectedNodes = ['1075','1000','1065','1055','1090','1050','1005','1015','1085','1080','1020','1001'];
+	allLeafNodesIds = [];
+	uncheckedNodes = [];
 
 	// FORM
 	widgetParametersForm: FormGroup;
@@ -51,11 +57,13 @@ export class PublicComponent implements OnInit {
 	componentCollection: Array<ComponentCollection> = [
 		{ name: "Line Chart", componentInstance: LineChartComponent, uiidentifier: "not_implemented" },
 		{ name: "Distribution by Verifica", componentInstance: DoughnutChartComponent, uiidentifier: "distribution_by_verifica" },
-		{ name: "Radar Chart", componentInstance: RadarChartComponent, uiidentifier: "not_implemented" },
 		{ name: "Count Trend", componentInstance: BarchartComponent, uiidentifier: "count_trend" },
 		{ name: "KPI Count Summary", componentInstance: KpiCountSummaryComponent, uiidentifier: "kpi_count_summary" },
 		{ name: "Catalog Pending Count Trends", componentInstance: CatalogPendingCountTrendsComponent, uiidentifier: "catalog_pending_count_trends" },
 		{ name: "Distribution by User", componentInstance: DistributionByUserComponent, uiidentifier: "distribution_by_user" },
+		{ name: "KPI Report Trend", componentInstance: KpiReportTrendComponent, uiidentifier: "kpi_report_trend" },
+		{ name: "Notification Trend", componentInstance: NotificationTrendComponent, uiidentifier: "notification_trend" },
+		{ name: "KPI count by Organization", componentInstance: KpiCountByOrganizationComponent, uiidentifier: "kpi_count_by_organization" },
 	];
 	helpText: string = '';
 	showDateRangeInFilters: boolean = false;
@@ -405,26 +413,42 @@ export class PublicComponent implements OnInit {
 	}
 
 	syncSelectedNodesArray(event, treeRef) {
-		console.log('cheked ');//, treeRef);
+		// this.allLeafNodesIds = [];
+		// this.getAllLeafNodesIds(treeRef.settings.dataSource);
+		this.uncheckedNodes = this.allLeafNodesIds.filter( value => this.permissionsTree.checkedNodes.indexOf(value.toString())==-1);
+		console.log(this.uncheckedNodes, this.uncheckedNodes.join(','));
 		treeRef.loaded = true;
-		//this.selectedData.checked = this.permissionsTree.checkedNodes;
 	}
-	checkedNodes: string[];
 	createTrees(treesData) {
-		treesData.forEach((itm: any) => {
-			let settings = { dataSource: [itm], id: 'id', text: 'name', title: 'name', child: 'children', hasChildren: 'children' };
+		console.log('treesData ->', treesData);
+		//treesData.forEach((itm: any) => {
+			let settings = { dataSource: treesData, id: 'id', text: 'name', title: 'name', child: 'children', hasChildren: 'children' };
 			this.treesArray.push({
-				name: itm.name,
+				name: treesData.name,
 				settings: settings,
-				checkedNodes: [],
-				id: itm.id,
-				elementId: `permissions_tree_${itm.id}`,
+				checkedNodes: this.preSelectedNodes,
+				id: treesData.id,
+				elementId: `permissions_tree_${treesData.id}`,
 				loaded: true
 			});
-		});
+			this.allLeafNodesIds = [];
+			this.getAllLeafNodesIds(treesData);
+			this.permissionsTree.checkAll(this.allLeafNodesIds);
+		//});
 		console.log('this.treesArray ->', this.treesArray);
-		//console.log('this.checkedNodes ->',this.checkedNodes);
 		this.isTreeLoaded = true;
+	}
+	getAllLeafNodesIds(complexJson) {
+		if (complexJson) {
+			complexJson.forEach((item:any)=>{
+			if (item.children) {
+				this.getAllLeafNodesIds(item.children);
+			} else {
+				this.allLeafNodesIds.push(item.id);
+			}
+			});
+			//console.log('allLeafNodesIds ->', this.allLeafNodesIds);
+		}
 	}
 
 	updateDashboardWidgetsArray(widgetId, widgetFormValues) {

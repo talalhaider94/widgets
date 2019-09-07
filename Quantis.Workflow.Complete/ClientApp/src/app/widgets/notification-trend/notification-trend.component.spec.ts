@@ -1,20 +1,20 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { KpiCountSummaryComponent } from './kpi-count-summary.component';
+import { NotificationTrendComponent } from './notification-trend.component';
 
-describe('KpiCountSummaryComponent', () => {
-  let component: KpiCountSummaryComponent;
-  let fixture: ComponentFixture<KpiCountSummaryComponent>;
+describe('NotificationTrendComponent', () => {
+  let component: NotificationTrendComponent;
+  let fixture: ComponentFixture<NotificationTrendComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ KpiCountSummaryComponent ]
+      declarations: [ NotificationTrendComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(KpiCountSummaryComponent);
+    fixture = TestBed.createComponent(NotificationTrendComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

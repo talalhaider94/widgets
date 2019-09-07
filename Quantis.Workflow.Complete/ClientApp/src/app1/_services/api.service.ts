@@ -15,7 +15,11 @@ export class ApiService {
 
   getBooklet(): Observable<any> {
     const getBookletEndPoint = `${environment.API_URL}/Oracle/GetBooklets`;
-    return this.http.get(getBookletEndPoint, Headers.setHeaders('GEt'));
+    return this.http.get(getBookletEndPoint, Headers.setHeaders('GET'));
+  }
+  getEventResourceNames(): Observable<any> {
+    const getEventResourceNamesEndPoint = `${environment.API_URL}/Data/GetEventResourceNames`;
+    return this.http.get(getEventResourceNamesEndPoint);
   }
   getCatalogoUsers(): Observable<any> {
     const getUtentiEndPoint = `${environment.API_URL}/data/GetAllUsers`;
@@ -169,6 +173,10 @@ export class ApiService {
   getKpis(userId,contractId): Observable<any> {
     const getKpisEndPoint = `${environment.API_URL}/information/GetAllKpisByUserId?userId=${userId}&contractId=${contractId}`;
     return this.http.get(getKpisEndPoint);
+  }
+  getSeconds(): Observable<any> {
+    const getSecondsEndPoint = `${environment.API_URL}/information/GetDashboardTickInterval`;
+    return this.http.get(getSecondsEndPoint);
   }
 
   updateConfig(config) {

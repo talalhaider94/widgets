@@ -31,6 +31,7 @@ export class DatiGrezziComponent implements OnInit {
   public filter: string;
   public comparator: any;
   public p: any;
+  public periodFilter: number;
 
   @ViewChild('kpiTable') block: ElementRef;
   @ViewChild('searchCol1') searchCol1: ElementRef;
@@ -52,9 +53,22 @@ export class DatiGrezziComponent implements OnInit {
   datiGrezzi=[];
   monthVar: any;
   yearVar: any;
-  countCampiData=[];
-id_kpi_temp = '';
-loadingModalDati:boolean=false;
+  idKpi: any;
+  countCampiData = [];
+  eventTypes: any = {};
+  resources: any = {};
+  id_kpi_temp = '';
+  loadingModalDati:boolean=false;
+
+  modalData = {
+    campo1: '',
+    campo2: '',
+    campo3: '',
+    campo4: ''
+  };
+
+  campoData: any = []
+
   fitroDataById: any = [
     {
       event_type_id: '   ',
@@ -143,14 +157,31 @@ loadingModalDati:boolean=false;
         }
       }
     };
+    this.periodFilter = 0;
     this.monthVar = moment().format('MM');
     this.yearVar = moment().format('YYYY');
     //this.getdati1(this.id_kpi_temp,this.monthVar,this.yearVar);
     this.getAnno();
+    this.getEventResourceNames()
     //this.setUpDataTableDependencies();
   }
 
-
+  getEventResourceNames() {
+    this.apiService.getEventResourceNames().subscribe((dati: any) => {
+      //this.EventResourceNames = dati;
+      var eventTypes = {};
+      var resources = {};
+      dati.forEach(function (item) {
+        if (item.type === 'EVENT_TYPE') {
+          eventTypes[item.id] = item.name + ' [' + item.id + ']';
+        } else {
+          resources[item.id] = item.name + ' [' + item.id + ']';
+        }
+      });
+      this.eventTypes = eventTypes;
+      this.resources = resources;
+    })
+  }
 
   // tslint:disable-next-line:use-life-cycle-interface
   ngAfterViewInit() {
@@ -273,11 +304,22 @@ loadingModalDati:boolean=false;
 clear(){
   this.filter = '';
   this.fitroDataById=[];
+  this.campoData=[];
   this.p=1;
 
   }
 
+
+  setId(id){
+    this.periodFilter = 0;
+    this.idKpi = id;
+    console.log('this.idKpi =>',this.idKpi);
+  }
+
+
   getdati1(id_kpi, month = this.monthVar, year = this.yearVar){
+    this.periodFilter = 1;
+    console.log('id_kpi =>',id_kpi);
     this.clear();
     
     this.id_kpi_temp = id_kpi;
@@ -312,6 +354,8 @@ clear(){
               this.fitroDataById[key].event_state_id = this.fitroDataById[key].event_state_id;
               break;
           }
+          this.fitroDataById[key].event_type_id = this.eventTypes[this.fitroDataById[key].event_type_id] ? this.eventTypes[this.fitroDataById[key].event_type_id] : this.fitroDataById[key].event_type_id;
+          this.fitroDataById[key].resource_id = this.resources[this.fitroDataById[key].resource_id] ? this.resources[this.fitroDataById[key].resource_id] : this.fitroDataById[key].resource_id;
           this.fitroDataById[key].modify_date=moment(this.fitroDataById[key].modify_date).format('DD/MM/YYYY HH:mm:ss');
           this.fitroDataById[key].create_date=moment(this.fitroDataById[key].create_date).format('DD/MM/YYYY HH:mm:ss');
           this.fitroDataById[key].time_stamp=moment(this.fitroDataById[key].time_stamp).format('DD/MM/YYYY HH:mm:ss');
@@ -348,7 +392,7 @@ clear(){
          this.loadingModalDati = false;
       });
   }
-
+  
   getCountCampiData(){
     let maxLength = 0;
     this.fitroDataById.forEach( f => {
@@ -362,7 +406,6 @@ clear(){
       this.countCampiData.push(i);
     }
   }
-  
 
   fireEvent()
 {
@@ -375,6 +418,20 @@ const ws: XLSX.WorkSheet=XLSX.utils.table_to_sheet(this.table.nativeElement);
 
 }
 
+populateEditModal(row){
+  var count:number = 0;
 
+  console.log('Campo->row.data: ',row.data);
+
+  Object.entries(row.data).forEach(([key, value]) => {
+    console.log(key,value);
+    this.campoData[count] = value;
+    count++;
+  });
+  console.log('this.campoData: ',this.campoData);
+}
+  updateDati() {
+    //for building
+  }
 
 }
